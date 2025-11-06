@@ -94,7 +94,7 @@ export default function SearchAndFilters({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ชื่อ, ชื่อเล่น, ฝ่าย, ตำแหน่ง, ระดับ, อีเมล, UserAD..."
-              className="w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder-slate-500 transition-all"
+              className="w-full pl-10 pr-10 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder-slate-500 transition-all hover:border-slate-400 shadow-sm"
             />
             {searchTerm && (
               <button
@@ -116,10 +116,12 @@ export default function SearchAndFilters({
           <select
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 transition-all"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 transition-all hover:border-slate-400 shadow-sm"
           >
             <option value="">ทุกฝ่าย/สถาบัน</option>
-            {departments.map((department) => (
+            {departments
+              .filter(department => department.name !== 'FTI Expo')
+              .map((department) => (
               <option key={department.id} value={department.name}>
                 {department.name}
               </option>
@@ -136,7 +138,7 @@ export default function SearchAndFilters({
           <select
             value={selectedPosition}
             onChange={(e) => setSelectedPosition(e.target.value)}
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 transition-all"
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 transition-all hover:border-slate-400 shadow-sm"
           >
             <option value="">ทุกระดับตำแหน่ง</option>
             {careerBands.map((careerBand) => (
