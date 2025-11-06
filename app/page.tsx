@@ -87,9 +87,14 @@ export default function Home() {
 
     console.log('🔍 Filtering employees:', {
       totalEmployees: employees.length,
+      activeEmployees: employees.filter(emp => emp.active === true).length,
       searchTerm,
       filters
     });
+
+    // Filter only active employees
+    filtered = filtered.filter(emp => emp.active === true);
+    console.log('✅ After active filter:', filtered.length);
 
     if (searchTerm) {
       filtered = filtered.filter(emp =>

@@ -113,7 +113,7 @@ async function getPostgresImage(fullName: string): Promise<{imageUrl: string, po
     const result = await pgClient.query(`
       SELECT id, "imageUrl" 
       FROM employees 
-      WHERE REPLACE("fullName", ' ', '') = $1
+      WHERE REPLACE("fullName", ' ', '') = $1 AND status = 'active'
     `, [normalizedName]);
     pgClient.release();
     
@@ -208,8 +208,14 @@ export async function getEmployees(
     
     console.log('✅ Successfully fetched employees from MSSQL:', result.recordset.length);
     
-    // Process employees - use PostgreSQL images ONLY
+    // Process employees - use PostgreSQL images ONLY and filter active only
     const employees = await Promise.all(result.recordset.map(async (emp: any) => {
+      // Skip inactive employees
+      if (emp.active !== true && emp.active !== 1) {
+        console.log(`⏭️ Skipping inactive employee: ${emp.fullName} (active: ${emp.active})`);
+        return null;
+      }
+      
       let finalImageUrl: string;
       let postgresId: string;
       
@@ -223,10 +229,9 @@ export async function getEmployees(
         finalImageUrl = pgData.imageUrl;
         postgresId = pgData.postgresId;
       } else {
-        // If no PostgreSQL image, use default avatar - NO MSSQL fallback!
-        finalImageUrl = '/images/default-avatar.svg';
-        postgresId = emp.id; // Use original MSSQL id as fallback
-        console.log(`⚠️ Using default avatar for: ${emp.fullName}`);
+        // If no PostgreSQL image found, skip this employee entirely
+        console.log(`⏭️ Skipping employee without active PostgreSQL record: ${emp.fullName}`);
+        return null;
       }
       
       return {
@@ -239,7 +244,11 @@ export async function getEmployees(
       };
     }));
     
-    return employees;
+    // Filter out null values (inactive employees)
+    const activeEmployees = employees.filter(emp => emp !== null);
+    console.log(`✅ Total employees from MSSQL: ${result.recordset.length}, Active employees after filter: ${activeEmployees.length}`);
+    
+    return activeEmployees;
       
   } catch (error) {
     console.error('❌ Database error in getEmployees:', error);
