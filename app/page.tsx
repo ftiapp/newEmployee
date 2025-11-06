@@ -144,10 +144,7 @@ export default function Home() {
       >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center">
-            <h1 className="text-2xl font-bold text-slate-800">
-              ระบบจัดการข้อมูลพนักงานใหม่
-            </h1>
-          </div>
+          
           </div>
         </div>
       </motion.header>
@@ -170,7 +167,8 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-slate-600 text-lg">
-            ติดตามและต้อนรับพนักงานใหม่ที่เข้าร่วมทีมของเรา
+            ติดตามและต้อนรับพนักงานใหม่ที่เข้าร่วมทีมของเรา<br></br>
+            สภาอุตสาหกรรมแห่งประเทศไทย
           </p>
         </motion.section>
 
