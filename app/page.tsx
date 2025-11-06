@@ -195,7 +195,7 @@ export default function Home() {
             departments={departments}
             careerBands={careerBands}
             onSearchChangeAction={handleSearchChange}
-            onFiltersChange={handleFiltersChange}
+            onFiltersChangeAction={handleFiltersChange}
           />
         </motion.div>
 

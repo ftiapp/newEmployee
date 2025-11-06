@@ -17,20 +17,20 @@ interface SearchAndFiltersProps {
   departments: Department[];
   careerBands: CareerBand[];
   onSearchChangeAction: (term: string) => void;
-  onFiltersChange: (department: string, position: string) => void;
+  onFiltersChangeAction: (department: string, position: string) => void;
 }
 
 interface FiltersProps {
   departments: Department[];
   careerBands: CareerBand[];
-  onFiltersChange: (department: string, position: string) => void;
+  onFiltersChangeAction: (department: string, position: string) => void;
 }
 
 export default function SearchAndFilters({
   departments,
   careerBands,
   onSearchChangeAction,
-  onFiltersChange
+  onFiltersChangeAction
 }: SearchAndFiltersProps) {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
@@ -43,8 +43,8 @@ export default function SearchAndFilters({
 
   useEffect(() => {
     console.log('🏢 Filters changed:', { selectedDepartment, selectedPosition });
-    onFiltersChange(selectedDepartment, selectedPosition);
-  }, [selectedDepartment, selectedPosition, onFiltersChange]);
+    onFiltersChangeAction(selectedDepartment, selectedPosition);
+  }, [selectedDepartment, selectedPosition, onFiltersChangeAction]);
 
   const clearSearch = () => {
     setSearchTerm('');
