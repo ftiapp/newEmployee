@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const referer = request.headers.get('referer');
+  const host = request.headers.get('host');
   const sharepointDomain = 'ftiorth.sharepoint.com';
+  
+  // ยกเว้น localhost:3000 สำหรับการพัฒนา
+  if (host === 'localhost:3000') {
+    return NextResponse.next();
+  }
   
   // ตรวจสอบว่ามาจาก SharePoint หรือไม่
   if (!referer || !referer.includes(sharepointDomain)) {

@@ -145,7 +145,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center">
             <Image
-              src="/FTI-MasterLogo-Naming_RGB-forLightBG.png"
+              src="/Logo_FTI.webp"
               alt="FTI - Federation of Thai Industries"
               width={260}
               height={65}
