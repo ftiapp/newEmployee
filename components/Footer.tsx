@@ -1,6 +1,3 @@
-import Image from 'next/image'
-
-
 export default function Footer() {
   return (
     <footer className="bg-gradient-to-br from-blue-50 to-white text-slate-700 border-t border-blue-100">
@@ -8,16 +5,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* FTI Info */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-3 mb-4">
-              <Image
-                src="/Logo_FTI.webp"
-                alt="FTI - Federation of Thai Industries"
-                width={140}
-                height={36}
-                priority
-              />
-              
-            </div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-4">
+              สภาอุตสาหกรรมแห่งประเทศไทย
+            </h3>
             <div className="space-y-2 text-slate-600">
               <p className="text-sm">
                 ชั้น 7 อาคารปฏิบัติการเทคโนโลยีเชิงสร้างสรรค์<br/>
