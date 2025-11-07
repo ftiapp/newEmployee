@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ShieldX, Lock, ExternalLink } from "lucide-react";
 
 export default function AccessDenied() {
@@ -10,18 +9,9 @@ export default function AccessDenied() {
           {/* Header with logo */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Image
-                  src="/Logo_FTI.webp"
-                  alt="สภาอุตสาหกรรมแห่งประเทศไทย"
-                  width={60}
-                  height={60}
-                  className="rounded-lg bg-white p-2"
-                />
-                <div>
-                  <h1 className="text-2xl font-bold">สภาอุตสาหกรรมแห่งประเทศไทย</h1>
-                  <p className="text-blue-100 text-sm">Federation of Thai Industries</p>
-                </div>
+              <div>
+                <h1 className="text-2xl font-bold">สภาอุตสาหกรรมแห่งประเทศไทย</h1>
+                <p className="text-blue-100 text-sm">Federation of Thai Industries</p>
               </div>
               <ShieldX className="w-12 h-12 text-blue-200" />
             </div>
