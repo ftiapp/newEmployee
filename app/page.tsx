@@ -149,7 +149,7 @@ export default function Home() {
       >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center">
-          
+            <Image src="/FTI-MasterLogo-Naming_RGB-forLightBG.png" alt="FTI Logo" width={250} height={80} className="h-auto w-auto max-h-16" />
           </div>
         </div>
       </motion.header>
