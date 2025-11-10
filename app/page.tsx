@@ -140,7 +140,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-white">
-      {/* Header with FTI Logo */}
+      {/* Header */}
       <motion.header
         className="bg-white shadow-sm border-b border-slate-200"
         initial={{ opacity: 0, y: -24 }}
@@ -149,7 +149,7 @@ export default function Home() {
       >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-center">
-            <img src="/fti-logo.png" alt="FTI Logo" className="h-16 w-auto object-contain" />
+            
           </div>
         </div>
       </motion.header>
