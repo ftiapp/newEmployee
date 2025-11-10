@@ -120,7 +120,7 @@ export default function SearchAndFilters({
           >
             <option value="">ทุกฝ่าย/สถาบัน</option>
             {departments
-              .filter(department => department.name !== 'FTI Expo')
+              .filter(department => department.name !== 'FTI Expo' && department.name !== 'ประจำผู้อำนวยการใหญ่ (โครงการพิเศษ CSR)')
               .map((department) => (
               <option key={department.id} value={department.name}>
                 {department.name}

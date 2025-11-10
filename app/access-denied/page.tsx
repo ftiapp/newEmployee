@@ -38,7 +38,7 @@ export default function AccessDenied() {
                 </p>
                 
                 <Link
-                  href="https://ftisharepoint"
+                  href="https://ftiorth.sharepoint.com/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
