@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
+import QueryProvider from '@/components/QueryProvider';
 import "./globals.css";
 
 const prompt = Prompt({
@@ -28,7 +29,9 @@ export default function RootLayout({
       <body
         className={`${prompt.variable} antialiased`}
       >
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

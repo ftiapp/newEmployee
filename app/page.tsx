@@ -1,21 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import EmployeeCard from '@/components/EmployeeCard';
 import TimelineSlider from '@/components/TimelineFilter';
 import SearchAndFilters from '@/components/Filters';
 import Footer from '@/components/Footer';
-import { Employee } from '@/lib/db';
+import { useEmployees, useDepartments, useCareerBands } from '@/lib/api';
 import { Users, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 export default function Home() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [careerBands, setCareerBands] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [dateRange, setDateRange] = useState<{ startDate: Date; endDate: Date }>({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 6)),
     endDate: new Date()
@@ -26,63 +21,17 @@ export default function Home() {
     position: '' // This will be used for bandLevel
   });
 
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate.toISOString(),
-        endDate: dateRange.endDate.toISOString()
-      });
+  // Use React Query hooks for data fetching with caching
+  const { data: employees = [], isLoading: employeesLoading } = useEmployees({
+    startDate: dateRange.startDate.toISOString(),
+    endDate: dateRange.endDate.toISOString()
+  });
 
-      const response = await fetch(`/api/employees?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('👥 Employees data:', data);
-        setEmployees(data);
-      }
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: departments = [] } = useDepartments();
+  const { data: careerBands = [] } = useCareerBands();
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await fetch('/api/employees?type=departments');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📋 Departments loaded:', data);
-        setDepartments(data);
-      }
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  };
-
-  const fetchCareerBands = async () => {
-    try {
-      const response = await fetch('/api/employees?type=careerBands');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('🎯 Career bands loaded:', data);
-        setCareerBands(data);
-      }
-    } catch (error) {
-      console.error('Error fetching career bands:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchDepartments();
-    fetchCareerBands();
-  }, []);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [dateRange]);
-
-  useEffect(() => {
+  // Memoize filtered employees to prevent unnecessary re-computations
+  const filteredEmployees = useMemo(() => {
     let filtered = employees;
 
     console.log('🔍 Filtering employees:', {
@@ -123,7 +72,7 @@ export default function Home() {
     }
 
     console.log('🎯 Final filtered count:', filtered.length);
-    setFilteredEmployees(filtered);
+    return filtered;
   }, [employees, searchTerm, filters]);
 
   const handleDateRangeChange = useCallback((startDate: Date, endDate: Date) => {
@@ -237,7 +186,7 @@ export default function Home() {
 
         {/* Employee Cards Section */}
         <main>
-          {loading ? (
+          {employeesLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
               <span className="text-slate-600 text-lg">กำลังโหลดข้อมูล...</span>
