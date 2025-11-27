@@ -17,13 +17,13 @@ const config: sql.config = {
   }
 };
 
-// PostgreSQL Configuration - ใช้ค่าจาก .env.local ของคุณ
+// PostgreSQL Configuration - ใช้ค่าจาก .env.local ของคุณ (PG_*)
 const pgConfig = {
-  host: process.env.DB_HOST!,
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME!,
-  user: process.env.DB_USER!,
-  password: process.env.DB_PASSWORD!,
+  host: process.env.PG_HOST!,
+  port: parseInt(process.env.PG_PORT || '5432'),
+  database: process.env.PG_DATABASE!,
+  user: process.env.PG_USER!,
+  password: process.env.PG_PASSWORD!,
   ssl: false // ปิด SSL ตามที่ทดสอบ
 };
 
@@ -141,140 +141,140 @@ export async function getEmployees(
   isNewEmployee?: boolean
 ): Promise<Employee[]> {
   try {
-    // Connect to MSSQL
-    const pool = await sql.connect(config);
-    const request = pool.request();
-    
-    // Build query
-    let queryText = `
-      SELECT TOP (1000)
-        EmployeeID as id,
-        UserAD as userAD,
-        FullName_TH as fullName,
-        FullName_EN as fullNameEN,
-        Nickname as nickname,
-        EmpPic as imageUrl,
-        DepartmentCode as departmentCode,
-        Department_Name_TH as department,
-        Department_Name_ENG as departmentENG,
-        Department_nickname as departmentNickname,
-        EmpCode as empCode,
-        Email2 as email,
-        Tel as tel,
-        BandCode as bandCode,
-        BandLevel as bandLevel,
-        SortLevel as sortLevel,
-        Position as position,
-        Active as active,
-        CurrentPositionStartDate as createdAt,
-        FirstWorkingDate
-      FROM [K2FTI].[dbo].[NewEmployee]
-      WHERE Active = 1
-    `;
+    const client = await pgPool.connect();
 
-    // Add filters
+    // สร้างเงื่อนไขแบบ dynamic
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    // ใช้เฉพาะพนักงานที่ active
+    conditions.push(`e.status = 'active'`);
+
+    // กรองตามช่วงวันที่จากหน้าเว็บ ด้วย workStartDate
     if (startDate) {
-      request.input('startDate', startDate);
-      queryText += ` AND FirstWorkingDate >= @startDate`;
+      values.push(startDate);
+      conditions.push(`e."workStartDate" >= $${values.length}`);
     }
 
     if (endDate) {
-      request.input('endDate', endDate);
-      queryText += ` AND FirstWorkingDate <= @endDate`;
+      values.push(endDate);
+      conditions.push(`e."workStartDate" <= $${values.length}`);
     }
 
+    // ตัวเลือกเสริม: ถ้า flag isNewEmployee เป็น true ให้บังคับเฉพาะ 90 วันที่ผ่านมา
     if (isNewEmployee) {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      request.input('ninetyDaysAgo', ninetyDaysAgo);
-      queryText += ` AND FirstWorkingDate >= @ninetyDaysAgo`;
+      values.push(ninetyDaysAgo);
+      conditions.push(`e."workStartDate" >= $${values.length}`);
     }
 
     if (department) {
-      request.input('department', department);
-      queryText += ` AND Department_Name_TH = @department`;
+      values.push(department);
+      // กรองตามชื่อฝ่ายจาก departments.fullName
+      conditions.push(`d."fullName" = $${values.length}`);
     }
 
     if (bandLevel) {
-      request.input('bandLevel', bandLevel);
-      queryText += ` AND BandLevel = @bandLevel`;
+      values.push(bandLevel);
+      // กรองตามค่า level เดิมใน employees.career_band (เช่น D1, M3) แบบ text
+      conditions.push(`CAST(e."career_band" AS TEXT) = $${values.length}`);
     }
 
-    queryText += ` ORDER BY FirstWorkingDate DESC`;
-    
-    // Execute query
-    const result = await request.query(queryText);
-    await pool.close();
-    
-    console.log('✅ Successfully fetched employees from MSSQL:', result.recordset.length);
-    
-    // Process employees - use PostgreSQL images ONLY and filter active only
-    const employees = await Promise.all(result.recordset.map(async (emp: any) => {
-      // Skip inactive employees
-      if (emp.active !== true && emp.active !== 1) {
-        console.log(`⏭️ Skipping inactive employee: ${emp.fullName} (active: ${emp.active})`);
-        return null;
-      }
-      
-      let finalImageUrl: string;
-      let postgresId: string;
-      
-      console.log(`🔍 Processing employee: ${emp.fullName}`);
-      
-      // Try to get image from PostgreSQL by matching fullName
-      const pgData = await getPostgresImage(emp.fullName);
-      
-      if (pgData) {
-        console.log(`✅ Using PostgreSQL image for: ${emp.fullName}`);
-        finalImageUrl = pgData.imageUrl;
-        postgresId = pgData.postgresId;
-      } else {
-        // If no PostgreSQL image found, skip this employee entirely
-        console.log(`⏭️ Skipping employee without active PostgreSQL record: ${emp.fullName}`);
-        return null;
-      }
-      
-      return {
-        ...emp,
-        id: pgData ? postgresId : emp.id, // Use PostgreSQL id if available, otherwise keep original MSSQL id
-        imageUrl: finalImageUrl,
-        postgresId: postgresId,
-        createdAt: emp.createdAt ? new Date(emp.createdAt) : new Date(),
-        firstWorkingDate: emp.firstWorkingDate ? new Date(emp.firstWorkingDate) : new Date()
-      };
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const queryText = `
+      SELECT
+        e.id,
+        e."employeeId" AS "empCode",
+        e."fullName",
+        e."nickName",
+        d."fullName" AS "departmentName",
+        e."deptName" AS "deptName",
+        e."position",
+        e."email",
+        e."mobilePhone",
+        e."imageUrl",
+        e."career_band",
+        e."workStartDate",
+        e.status
+      FROM employees e
+      -- ใช้ FK จาก employees.departments ไปยัง departments.id เพื่อดึงชื่อเต็มของฝ่าย/สถาบัน
+      LEFT JOIN departments d ON e."departments" = d.id
+      ${whereClause}
+      ORDER BY e."workStartDate" DESC
+      LIMIT 1000
+    `;
+
+    const result = await client.query(queryText, values);
+    client.release();
+
+    console.log('✅ Successfully fetched employees from PostgreSQL employees table:', result.rows.length);
+
+    const employees: Employee[] = result.rows.map((row: any) => ({
+      id: String(row.id),
+      userAD: '',
+      fullName: row.fullName as string,
+      fullNameEN: '',
+      nickname: row.nickName as string,
+      imageUrl: row.imageUrl as string,
+      departmentCode: '',
+      // ใช้ชื่อฝ่าย/สถาบันจาก departments.fullName ถ้ามี
+      // ถ้าไม่มีให้ fallback ไป deptName เดิมใน employees
+      // และถ้ายังไม่มีอีกให้ใช้ข้อความ default ว่า 'ไม่ระบุฝ่าย/สถาบัน'
+      department:
+        (row.departmentName as string) ||
+        (row.deptName as string) ||
+        'ไม่ระบุฝ่าย/สถาบัน',
+      departmentENG: '',
+      departmentNickname: '',
+      empCode: row.empCode as string,
+      email: row.email as string,
+      tel: row.mobilePhone as string,
+      bandCode: '',
+      // ตอนนี้ใช้ค่า career_band เดิมเป็น text (เช่น D1, M3) เพื่อให้ข้อมูลกลับมาขึ้นก่อน
+      bandLevel: row.career_band ? String(row.career_band) : '',
+      sortLevel: 0,
+      position: row.position as string,
+      active: row.status === 'active',
+      createdAt: row.workStartDate ? new Date(row.workStartDate) : new Date(),
+      firstWorkingDate: row.workStartDate ? new Date(row.workStartDate) : new Date(),
+      postgresId: String(row.id),
     }));
-    
-    // Filter out null values (inactive employees)
-    const activeEmployees = employees.filter(emp => emp !== null);
-    console.log(`✅ Total employees from MSSQL: ${result.recordset.length}, Active employees after filter: ${activeEmployees.length}`);
-    
-    return activeEmployees;
-      
+
+    return employees;
   } catch (error) {
-    console.error('❌ Database error in getEmployees:', error);
+    console.error('❌ Database error in getEmployees (Postgres):', error);
     return [];
   }
 }
 
 export async function getDepartments(): Promise<Department[]> {
   try {
-    const pool = await sql.connect(config);
-    const request = pool.request();
-    
-    const queryText = `
-      SELECT DISTINCT TOP (1000)
-        DepartmentCode as id,
-        Department_Name_TH as name
-      FROM [K2FTI].[dbo].[NewEmployee]
-      WHERE Active = 1 AND Department_Name_TH IS NOT NULL
-      ORDER BY Department_Name_TH
-    `;
-    
-    const result = await request.query(queryText);
-    await pool.close();
-    
-    console.log('✅ Successfully fetched departments from NewEmployee table:', result.recordset.length);
-    return result.recordset;
+    const client = await pgPool.connect();
+
+    // ใช้ตาราง departments จริง และ join กับ employees.departments (FK ไปยัง departments.id)
+    // เพื่อให้มีเฉพาะฝ่าย/สถาบันที่มีพนักงานอยู่ในระบบ
+    const result = await client.query(`
+      SELECT DISTINCT d.id, d."fullName" AS name
+      FROM departments d
+      JOIN employees e ON e."departments" = d.id
+      WHERE e.status = 'active'
+        AND d."fullName" IS NOT NULL
+        AND d."fullName" <> ''
+        AND d."fullName" NOT IN ('ผู้อำนวยการใหญ่', 'รองผู้อำนวยการใหญ่')
+      ORDER BY d."fullName"
+    `);
+
+    client.release();
+
+    console.log('✅ Successfully fetched departments from PostgreSQL departments table (joined with employees):', result.rows.length);
+
+    // map ให้ตรงกับ interface Department { id, name }
+    return result.rows.map((row: any) => ({
+      id: String(row.id),
+      name: row.name as string,
+    }));
   } catch (error) {
     console.error('❌ Database error in getDepartments:', error);
     return [];
@@ -283,23 +283,23 @@ export async function getDepartments(): Promise<Department[]> {
 
 export async function getCareerBands(): Promise<CareerBand[]> {
   try {
-    const pool = await sql.connect(config);
-    const request = pool.request();
-    
-    const queryText = `
-      SELECT DISTINCT TOP (1000)
-        Position as id,
-        Position as name
-      FROM [K2FTI].[dbo].[NewEmployee]
-      WHERE Active = 1 AND Position IS NOT NULL
-      ORDER BY Position
-    `;
-    
-    const result = await request.query(queryText);
-    await pool.close();
-    
-    console.log('✅ Successfully fetched positions from NewEmployee table:', result.recordset.length);
-    return result.recordset;
+    const client = await pgPool.connect();
+
+    const result = await client.query(`
+      SELECT id, "thName" AS name
+      FROM career_bands
+      WHERE "thName" IS NOT NULL AND "thName" <> ''
+      ORDER BY id
+    `);
+
+    client.release();
+
+    console.log('✅ Successfully fetched career bands from PostgreSQL career_bands table:', result.rows.length);
+
+    return result.rows.map((row: any) => ({
+      id: String(row.id),
+      name: row.name as string,
+    }));
   } catch (error) {
     console.error('❌ Database error in getCareerBands:', error);
     return [];

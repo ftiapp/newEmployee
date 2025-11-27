@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import EmployeeCard from '@/components/EmployeeCard';
 import TimelineSlider from '@/components/TimelineFilter';
 import SearchAndFilters from '@/components/Filters';
@@ -46,14 +45,15 @@ export default function Home() {
     console.log('✅ After active filter:', filtered.length);
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(emp =>
-        emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.bandLevel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.userAD?.toLowerCase().includes(searchTerm.toLowerCase())
+        (emp.fullName || '').toLowerCase().includes(term) ||
+        (emp.department || '').toLowerCase().includes(term) ||
+        (emp.position || '').toLowerCase().includes(term) ||
+        (emp.bandLevel || '').toLowerCase().includes(term) ||
+        (emp.nickname || '').toLowerCase().includes(term) ||
+        (emp.email || '').toLowerCase().includes(term) ||
+        (emp.userAD || '').toLowerCase().includes(term)
       );
     }
 
@@ -88,101 +88,112 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-white">
-      {/* Header */}
-      <motion.header
-        className="bg-white shadow-sm border-b border-slate-200"
-        initial={{ opacity: 0, y: -24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-center">
-            
-          </div>
-        </div>
-      </motion.header>
+    <div className="min-h-screen bg-slate-50">
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Page Header Section */}
-        <motion.section
-          className="mb-8 text-center"
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ once: true, amount: 0.3 }}
-        >
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-              <Users className="w-8 h-8 text-white" />
+      {/* Top Header (themed like FTI apps) */}
+      <header className="bg-white shadow">
+        <div className="flex h-14 w-full items-stretch">
+          {/* Left brand block */}
+          <div className="flex items-stretch">
+            <div className="flex items-center bg-white pl-3 pr-8 text-indigo-800 sm:pl-6 sm:pr-10">
+
+              <div className="flex items-center gap-2">
+                <img
+                  src="/Logo.png"
+                  alt="FTI Logo"
+                  className="h-7 w-auto sm:h-8 object-contain"
+                />
+                <div className="flex flex-col leading-snug">
+                  <span className="inline-flex items-center gap-1.5 text-base font-semibold tracking-wide sm:text-lg">
+                    <span>ยินดีต้อนรับพนักงานใหม่</span>
+                  </span>
+                  <span className="hidden text-[11px] text-slate-500 sm:inline">
+                    สภาอุตสาหกรรมแห่งประเทศไทย
+                  </span>
+                </div>
+              </div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              พนักงานใหม่
-            </h1>
           </div>
-          <p className="text-slate-600 text-lg">
-            ติดตามและต้อนรับพนักงานใหม่ที่เข้าร่วมทีมของเรา<br></br>
-            สภาอุตสาหกรรมแห่งประเทศไทย
-          </p>
-        </motion.section>
+          {/* Right fill block */}
+          <div className="flex-1 bg-indigo-800 header-blue-notch" />
+        </div>
+      </header>
 
-        {/* Timeline Slider Section */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <TimelineSlider onDateRangeChangeAction={handleDateRangeChange} />
-        </motion.div>
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
+        {/* Hero / Page Header */}
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 px-5 py-5 md:px-8 md:py-6 grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)] gap-6 md:items-center">
+          <div className="flex items-start gap-4">
+            <div className="p-3 md:p-4 bg-slate-100 rounded-xl border border-slate-200">
+              <Users className="w-7 h-7 md:w-8 md:h-8 text-slate-700" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+                พนักงานใหม่
+              </h1>
+              <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+                ติดตามและต้อนรับพนักงานใหม่ที่เข้าร่วมทีมของเราในช่วงเวลาที่เลือก
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-start md:items-end gap-3 md:gap-2">
+            <span className="text-xs uppercase tracking-wide text-slate-500">สรุปจำนวนพนักงานใหม่</span>
+            <div className="inline-flex items-baseline gap-2 px-4 py-2 rounded-lg bg-slate-100 border border-slate-200">
+              <span className="text-2xl font-bold text-slate-900">{filteredEmployees.length}</span>
+              <span className="text-sm text-slate-600">คนในช่วงที่เลือก</span>
+            </div>
+          </div>
+        </section>
 
-        {/* Search and Filters Section */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <SearchAndFilters
-            departments={departments}
-            careerBands={careerBands}
-            onSearchChangeAction={handleSearchChange}
-            onFiltersChangeAction={handleFiltersChange}
-          />
-        </motion.div>
+        {/* Controls: Timeline + Filters */}
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 md:p-6 space-y-5">
+          <div className="rounded-lg p-4 bg-slate-50 border border-slate-200/70">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">1. เลือกช่วงเวลา</h2>
+                <p className="text-xs text-slate-500">เลือกช่วงเดือนที่ต้องการดูพนักงานใหม่</p>
+              </div>
+            </div>
+            <TimelineSlider onDateRangeChangeAction={handleDateRangeChange} />
+          </div>
+
+          <div className="rounded-lg p-4 bg-slate-50 border border-slate-200/70">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">2. ค้นหาและกรอง</h2>
+                <p className="text-xs text-slate-500">ค้นหาตามชื่อ ฝ่าย หรือระดับตำแหน่ง เพื่อเจอคนที่ต้องการเร็วขึ้น</p>
+              </div>
+            </div>
+            <SearchAndFilters
+              departments={departments}
+              careerBands={careerBands}
+              onSearchChangeAction={handleSearchChange}
+              onFiltersChangeAction={handleFiltersChange}
+            />
+          </div>
+        </section>
 
         {/* Results Summary */}
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-slate-700 font-medium">
-                  พบพนักงานทั้งหมด {filteredEmployees.length} คน
-                </span>
-              </div>
-              {(searchTerm || filters.department || filters.position) && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setFilters({ department: '', position: '' });
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                >
-                  ล้างตัวกรอง
-                </button>
-              )}
+        <section className="mb-2">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm md:text-base text-slate-700 font-medium">
+                ผลลัพธ์พนักงานทั้งหมด {filteredEmployees.length} คน
+              </span>
             </div>
+            {(searchTerm || filters.department || filters.position) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilters({ department: '', position: '' });
+                }}
+                className="text-xs md:text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                ล้างตัวกรองทั้งหมด
+              </button>
+            )}
           </div>
-        </motion.div>
+        </section>
 
         {/* Employee Cards Section */}
         <main>
@@ -213,32 +224,13 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.1 }}
-            >
-              {filteredEmployees.map((employee, index) => (
-                <motion.div
-                  key={employee.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 24 },
-                    visible: { opacity: 1, y: 0 }
-                  }}
-                  initial="hidden"
-                  whileInView="visible"
-                  transition={{
-                    duration: 0.45,
-                    delay: index * 0.05,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                  viewport={{ once: true, amount: 0.2 }}
-                >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredEmployees.map((employee) => (
+                <div key={employee.id}>
                   <EmployeeCard employee={employee} />
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           )}
         </main>
       </div>

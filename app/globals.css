@@ -17,3 +17,9 @@ body {
 * {
   font-family: var(--font-prompt), system-ui, -apple-system, sans-serif;
 }
+
+/* แถบสีน้ำเงินด้านขวาใน Header ให้เฉียงแบบ EDMS */
+.header-blue-notch {
+  /* เริ่มจากมุมบนซ้ายที่ x=15% แล้วลากไปขวา: ทำให้เอียงน้อยลง */
+  clip-path: polygon(7% 0, 100% 0, 100% 100%, 0 100%);
+}
