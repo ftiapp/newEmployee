@@ -4,6 +4,12 @@ export function middleware(request: NextRequest) {
   const referer = request.headers.get('referer');
   const host = request.headers.get('host');
   const sharepointDomain = 'ftiorth.sharepoint.com';
+  const { pathname } = request.nextUrl;
+  
+  // Skip all static asset requests (files with an extension such as .png, .webp, .svg, .css, .js)
+  if (pathname.includes('.')) {
+    return NextResponse.next();
+  }
   
   // ยกเว้น localhost:3000 สำหรับการพัฒนา
   if (host === 'localhost:3000') {
