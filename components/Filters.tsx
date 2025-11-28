@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
 import { Search, Building2, User, X } from 'lucide-react';
 
 interface Department {
@@ -18,6 +19,7 @@ interface SearchAndFiltersProps {
   careerBands: CareerBand[];
   onSearchChangeAction: (term: string) => void;
   onFiltersChangeAction: (departments: string[], positions: string[]) => void;
+  dateRangeLabel?: string;
 }
 
 interface FiltersProps {
@@ -30,13 +32,20 @@ export default function SearchAndFilters({
   departments,
   careerBands,
   onSearchChangeAction,
-  onFiltersChangeAction
+  onFiltersChangeAction,
+  dateRangeLabel
 }: SearchAndFiltersProps) {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
   const [isDepartmentOpen, setIsDepartmentOpen] = useState<boolean>(false);
   const [isPositionOpen, setIsPositionOpen] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const closeAllDropdowns = () => {
+    setIsDepartmentOpen(false);
+    setIsPositionOpen(false);
+  };
 
   useEffect(() => {
     console.log('📝 Search term changed:', searchTerm);
@@ -64,8 +73,27 @@ export default function SearchAndFilters({
     setSelectedPositions([]);
   };
 
+  // ปิด dropdown ทั้งหมดเมื่อคลิกนอกกล่อง SearchAndFilters
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (containerRef.current && target && !containerRef.current.contains(target)) {
+        closeAllDropdowns();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+    <div
+      ref={containerRef}
+      onClick={closeAllDropdowns}
+      className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6"
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-100 rounded-lg">
@@ -74,8 +102,14 @@ export default function SearchAndFilters({
           <div>
             <h3 className="font-semibold text-slate-800 text-lg">ค้นหาและกรอง</h3>
             <p className="text-sm text-slate-500"> ค้นหาและกรองข้อมูลพนักงาน</p>
+            {dateRangeLabel && (
+              <p className="text-xs text-slate-500 mt-0.5">
+                <span className="font-semibold text-slate-800">{dateRangeLabel}</span>
+              </p>
+            )}
           </div>
         </div>
+
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
@@ -122,7 +156,10 @@ export default function SearchAndFilters({
           <div className="relative">
             <button
               type="button"
-              onClick={() => setIsDepartmentOpen((prev) => !prev)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDepartmentOpen((prev) => !prev);
+              }}
               className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm"
             >
               <span className="truncate">
@@ -194,7 +231,10 @@ export default function SearchAndFilters({
           <div className="relative">
             <button
               type="button"
-              onClick={() => setIsPositionOpen((prev) => !prev)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPositionOpen((prev) => !prev);
+              }}
               className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm"
             >
               <span className="truncate">

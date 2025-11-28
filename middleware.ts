@@ -1,29 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const referer = request.headers.get('referer');
-  const host = request.headers.get('host');
-  const sharepointDomain = 'ftiorth.sharepoint.com';
+  // อย่าบล็อกอะไรเลยในโหมด development
+  if (process.env.NODE_ENV !== 'production') {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
-  
-  // Skip all static asset requests (files with an extension such as .png, .webp, .svg, .css, .js)
+
+  // ข้าม static asset requests (ไฟล์ที่มีนามสกุล เช่น .png, .webp, .svg, .css, .js)
   if (pathname.includes('.')) {
     return NextResponse.next();
   }
-  
-  // ยกเว้น localhost:3000 สำหรับการพัฒนา
-  if (host === 'localhost:3000') {
-    return NextResponse.next();
-  }
-  
-  // ตรวจสอบว่ามาจาก SharePoint หรือไม่
+
+  const referer = request.headers.get('referer');
+  const sharepointDomain = 'ftiorth.sharepoint.com';
+
+  // ตรวจสอบว่า request มาจาก SharePoint หรือไม่ (ใช้เฉพาะ production)
   if (!referer || !referer.includes(sharepointDomain)) {
-    // ถ้าไม่ได้มาจาก SharePoint ให้ redirect ไปหน้า access-denied
     const url = request.nextUrl.clone();
     url.pathname = '/access-denied';
     return NextResponse.redirect(url);
   }
-  
+
   return NextResponse.next();
 }
 

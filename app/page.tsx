@@ -29,6 +29,13 @@ export default function Home() {
   const { data: departments = [] } = useDepartments();
   const { data: careerBands = [] } = useCareerBands();
 
+  const dateRangeLabel = useMemo(() => {
+    if (!dateRange.startDate || !dateRange.endDate) return '';
+    const formatThaiMonth = (d: Date) =>
+      d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long' });
+    return `${formatThaiMonth(dateRange.startDate)} - ${formatThaiMonth(dateRange.endDate)}`;
+  }, [dateRange.startDate, dateRange.endDate]);
+
   // Memoize filtered employees to prevent unnecessary re-computations
   const filteredEmployees = useMemo(() => {
     let filtered = employees;
@@ -172,6 +179,7 @@ export default function Home() {
               careerBands={careerBands}
               onSearchChangeAction={handleSearchChange}
               onFiltersChangeAction={handleFiltersChange}
+              dateRangeLabel={dateRangeLabel}
             />
           </div>
         </section>

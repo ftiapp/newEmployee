@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 import { Calendar, ChevronDown } from 'lucide-react';
 
@@ -30,9 +30,19 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
   const [isStartYearOpen, setIsStartYearOpen] = useState(false);
   const [isEndMonthOpen, setIsEndMonthOpen] = useState(false);
   const [isEndYearOpen, setIsEndYearOpen] = useState(false);
+  const [activePreset, setActivePreset] = useState<'month' | '3m' | '6m' | '12m' | null>('6m');
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const closeAllDropdowns = () => {
+    setIsStartMonthOpen(false);
+    setIsStartYearOpen(false);
+    setIsEndMonthOpen(false);
+    setIsEndYearOpen(false);
+  };
 
   useEffect(() => {
     const now = new Date();
+
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
     const startValue = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}`;
@@ -41,18 +51,57 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
     setStartMonth(startValue);
     setEndMonth(endValue);
 
+    // ค่าเริ่มต้นถือว่าใช้ preset 6 เดือนล่าสุด
+    setActivePreset('6m');
+
     const startDate = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth(), 1);
     const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     onDateRangeChangeAction(startDate, endDate);
   }, [onDateRangeChangeAction]);
 
+  // ปิด dropdown ทั้งหมดเมื่อคลิกนอกกล่อง TimelineSlider
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (containerRef.current && target && !containerRef.current.contains(target)) {
+        closeAllDropdowns();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   useEffect(() => {
     if (!startMonth || !endMonth) return;
 
-    const [startYear, startM] = startMonth.split('-').map(Number);
-    const [endYear, endM] = endMonth.split('-').map(Number);
+    let [startYear, startM] = startMonth.split('-').map(Number);
+    let [endYear, endM] = endMonth.split('-').map(Number);
 
     if (!startYear || !startM || !endYear || !endM) return;
+
+    // คำนวณจำนวนเดือนที่เลือกอยู่ตอนนี้
+    let diffMonths = (endYear - startYear) * 12 + (endM - startM) + 1;
+
+    // ถ้าเกิน 12 เดือน ให้บีบ endMonth ให้อยู่ไม่เกิน 12 เดือนจาก startMonth
+    if (diffMonths > 12) {
+      const startBase = new Date(startYear, startM - 1, 1);
+      const clampedEnd = new Date(startBase.getFullYear(), startBase.getMonth() + 11, 1);
+      const clampedEndValue = `${clampedEnd.getFullYear()}-${String(
+        clampedEnd.getMonth() + 1
+      ).padStart(2, '0')}`;
+
+      // ป้องกัน loop โดย set เฉพาะเมื่อค่าจริงต่างจากที่คำนวณใหม่
+      if (clampedEndValue !== endMonth) {
+        setEndMonth(clampedEndValue);
+        return;
+      }
+
+      endYear = clampedEnd.getFullYear();
+      endM = clampedEnd.getMonth() + 1;
+    }
 
     const startDate = new Date(startYear, startM - 1, 1);
     const endDate = new Date(endYear, endM, 0); // วันสุดท้ายของเดือน
@@ -67,6 +116,9 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
     if (!sy || !sm || !ey || !em) return 0;
     return (ey - sy) * 12 + (em - sm) + 1;
   })();
+
+  const startLabel = startMonth ? formatThaiMonthLabel(startMonth) : '';
+  const endLabel = endMonth ? formatThaiMonthLabel(endMonth) : '';
 
   const monthOptions = useMemo(
     () => [
@@ -89,11 +141,8 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
   const yearOptions = useMemo(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const years: number[] = [];
-    for (let y = currentYear - 5; y <= currentYear + 1; y++) {
-      years.push(y);
-    }
-    return years;
+    // แสดงเฉพาะปีที่ครอบคลุม 12 เดือนล่าสุด: ปัจจุบัน และปีก่อนหน้า
+    return [currentYear - 1, currentYear];
   }, []);
 
   const parseYearMonth = (value: string): { year: number; month: number } | null => {
@@ -104,7 +153,11 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 space-y-5">
+    <div
+      ref={containerRef}
+      onClick={closeAllDropdowns}
+      className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 space-y-5"
+    >
       <div className="flex items-center gap-3 mb-1">
         <div className="p-2 bg-blue-100 rounded-lg">
           <Calendar className="w-5 h-5 text-blue-600" />
@@ -127,6 +180,7 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const handleChange = (newYear: number, newMonth: number) => {
               const value = `${newYear}-${String(newMonth).padStart(2, '0')}`;
               setStartMonth(value);
+              setActivePreset(null);
             };
 
             return (
@@ -134,7 +188,8 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
                 <div className="relative w-1/2">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setIsStartMonthOpen((prev) => !prev);
                       setIsStartYearOpen(false);
                     }}
@@ -172,7 +227,8 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
                 <div className="relative w-1/2">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setIsStartYearOpen((prev) => !prev);
                       setIsStartMonthOpen(false);
                     }}
@@ -220,6 +276,7 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const handleChange = (newYear: number, newMonth: number) => {
               const value = `${newYear}-${String(newMonth).padStart(2, '0')}`;
               setEndMonth(value);
+              setActivePreset(null);
             };
 
             return (
@@ -228,7 +285,8 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
                 <div className="relative w-1/2">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setIsEndMonthOpen((prev) => !prev);
                       setIsEndYearOpen(false);
                     }}
@@ -267,7 +325,8 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
                 <div className="relative w-1/2">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setIsEndYearOpen((prev) => !prev);
                       setIsEndMonthOpen(false);
                     }}
@@ -319,8 +378,13 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const endValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             setStartMonth(startValue);
             setEndMonth(endValue);
+            setActivePreset('month');
           }}
-          className="px-3 py-1 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+          className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+            activePreset === 'month'
+              ? 'bg-blue-50 text-blue-700 border-blue-300'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+          }`}
         >
           เดือนนี้
         </button>
@@ -333,8 +397,13 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const endValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             setStartMonth(startValue);
             setEndMonth(endValue);
+            setActivePreset('3m');
           }}
-          className="px-3 py-1 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+          className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+            activePreset === '3m'
+              ? 'bg-blue-50 text-blue-700 border-blue-300'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+          }`}
         >
           3 เดือนล่าสุด
         </button>
@@ -347,8 +416,13 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const endValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             setStartMonth(startValue);
             setEndMonth(endValue);
+            setActivePreset('6m');
           }}
-          className="px-3 py-1 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+          className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+            activePreset === '6m'
+              ? 'bg-blue-50 text-blue-700 border-blue-300'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+          }`}
         >
           6 เดือนล่าสุด
         </button>
@@ -361,8 +435,13 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const endValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             setStartMonth(startValue);
             setEndMonth(endValue);
+            setActivePreset('12m');
           }}
-          className="px-3 py-1 rounded-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+          className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+            activePreset === '12m'
+              ? 'bg-blue-50 text-blue-700 border-blue-300'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+          }`}
         >
           12 เดือนล่าสุด
         </button>
@@ -371,8 +450,10 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
       {/* Summary */}
       <div className="flex items-center justify-between text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2 mt-1 border border-slate-200">
         <span>
-          แสดงพนักงานที่เข้าทำงานในช่วงประมาณ <span className="font-semibold text-blue-700">{selectedMonths}</span> เดือน
+          แสดงพนักงานที่เข้าทำงานในช่วงประมาณ{' '}
+          <span className="font-semibold text-blue-700">{selectedMonths}</span> เดือน
         </span>
+
         <button
           type="button"
           onClick={() => {
