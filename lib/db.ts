@@ -175,11 +175,8 @@ export async function getEmployees(
       conditions.push(`d."fullName" = $${values.length}`);
     }
 
-    if (bandLevel) {
-      values.push(bandLevel);
-      // กรองตามค่า level เดิมใน employees.career_band (เช่น D1, M3) แบบ text
-      conditions.push(`CAST(e."career_band" AS TEXT) = $${values.length}`);
-    }
+    // การกรองตามระดับตำแหน่ง (bandLevel) จะย้ายไปทำในชั้น API
+    // หลังจากที่แมปเป็นชื่อไทยเต็มจากตาราง career_bands แล้ว
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 

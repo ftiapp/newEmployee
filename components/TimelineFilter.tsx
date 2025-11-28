@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 
-import { Calendar } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 
 interface TimelineSliderProps {
   onDateRangeChangeAction: (startDate: Date, endDate: Date) => void;
 }
 
-// แปลงค่า YYYY-MM ให้เป็นข้อความเดือน+ปีภาษาไทย เช่น "ธันวาคม 2024"
 function formatThaiMonthLabel(value: string): string {
   if (!value) return '';
   const [yearStr, monthStr] = value.split('-');
@@ -27,8 +26,11 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
 
   const [startMonth, setStartMonth] = useState<string>(''); // รูปแบบ YYYY-MM
   const [endMonth, setEndMonth] = useState<string>('');
+  const [isStartMonthOpen, setIsStartMonthOpen] = useState(false);
+  const [isStartYearOpen, setIsStartYearOpen] = useState(false);
+  const [isEndMonthOpen, setIsEndMonthOpen] = useState(false);
+  const [isEndYearOpen, setIsEndYearOpen] = useState(false);
 
-  // ตั้งค่าเริ่มต้น = 6 เดือนย้อนหลังจนถึงเดือนปัจจุบัน
   useEffect(() => {
     const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
@@ -44,7 +46,6 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
     onDateRangeChangeAction(startDate, endDate);
   }, [onDateRangeChangeAction]);
 
-  // เรียกเปลี่ยนช่วงเวลาทุกครั้งที่ user ปรับ month
   useEffect(() => {
     if (!startMonth || !endMonth) return;
 
@@ -59,7 +60,6 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
     onDateRangeChangeAction(startDate, endDate);
   }, [startMonth, endMonth, onDateRangeChangeAction]);
 
-  // จำนวนเดือนที่เลือก (ใช้แสดงผลให้ user เข้าใจ)
   const selectedMonths = (() => {
     if (!startMonth || !endMonth) return 0;
     const [sy, sm] = startMonth.split('-').map(Number);
@@ -68,7 +68,6 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
     return (ey - sy) * 12 + (em - sm) + 1;
   })();
 
-  // เตรียมรายการเดือน/ปีสำหรับ dropdown
   const monthOptions = useMemo(
     () => [
       { value: 1, label: 'มกราคม' },
@@ -91,7 +90,6 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
     const now = new Date();
     const currentYear = now.getFullYear();
     const years: number[] = [];
-    // ย้อนหลัง 5 ปี และล่วงหน้า 1 ปี (ปรับได้ตามต้องการ)
     for (let y = currentYear - 5; y <= currentYear + 1; y++) {
       years.push(y);
     }
@@ -107,7 +105,6 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-1">
         <div className="p-2 bg-blue-100 rounded-lg">
           <Calendar className="w-5 h-5 text-blue-600" />
@@ -118,9 +115,7 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
         </div>
       </div>
 
-      {/* Inputs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* From Month */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">จากเดือน</label>
 
@@ -136,34 +131,84 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
 
             return (
               <div className="flex gap-2">
-                <select
-                  className="w-1/2 px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={month}
-                  onChange={(e) => handleChange(year, Number(e.target.value))}
-                >
-                  {monthOptions.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="w-1/2 px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={year}
-                  onChange={(e) => handleChange(Number(e.target.value), month)}
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y + 543}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative w-1/2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStartMonthOpen((prev) => !prev);
+                      setIsStartYearOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm text-sm"
+                  >
+                    <span className="truncate">
+                      {monthOptions.find((m) => m.value === month)?.label || 'เลือกเดือน'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+                  </button>
+                  {isStartMonthOpen && (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto text-sm">
+                      {monthOptions.map((m) => {
+                        const isActive = m.value === month;
+                        return (
+                          <button
+                            key={m.value}
+                            type="button"
+                            onClick={() => {
+                              handleChange(year, m.value);
+                              setIsStartMonthOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 hover:bg-blue-50 ${
+                              isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                            }`}
+                          >
+                            {m.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative w-1/2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsStartYearOpen((prev) => !prev);
+                      setIsStartMonthOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm text-sm"
+                  >
+                    <span className="truncate">{year + 543}</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+                  </button>
+                  {isStartYearOpen && (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto text-sm">
+                      {yearOptions.map((y) => {
+                        const isActive = y === year;
+                        return (
+                          <button
+                            key={y}
+                            type="button"
+                            onClick={() => {
+                              handleChange(y, month);
+                              setIsStartYearOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 hover:bg-blue-50 ${
+                              isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                            }`}
+                          >
+                            {y + 543}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}
         </div>
 
-        {/* To Month */}
         <div className="space-y-1">
           <label className="block text-sm font-medium text-slate-700">ถึงเดือน</label>
 
@@ -179,32 +224,86 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
 
             return (
               <div className="flex gap-2">
-                <select
-                  className="w-1/2 px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={month}
-                  onChange={(e) => handleChange(year, Number(e.target.value))}
-                >
-                  {monthOptions.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="w-1/2 px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={year}
-                  onChange={(e) => handleChange(Number(e.target.value), month)}
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y + 543}
-                    </option>
-                  ))}
-                </select>
+                {/* End Month Dropdown */}
+                <div className="relative w-1/2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEndMonthOpen((prev) => !prev);
+                      setIsEndYearOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm text-sm"
+                  >
+                    <span className="truncate">
+                      {monthOptions.find((m) => m.value === month)?.label || 'เลือกเดือน'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+                  </button>
+                  {isEndMonthOpen && (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto text-sm">
+                      {monthOptions.map((m) => {
+                        const isActive = m.value === month;
+                        return (
+                          <button
+                            key={m.value}
+                            type="button"
+                            onClick={() => {
+                              handleChange(year, m.value);
+                              setIsEndMonthOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 hover:bg-blue-50 ${
+                              isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                            }`}
+                          >
+                            {m.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* End Year Dropdown */}
+                <div className="relative w-1/2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEndYearOpen((prev) => !prev);
+                      setIsEndMonthOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm text-sm"
+                  >
+                    <span className="truncate">{year + 543}</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+                  </button>
+                  {isEndYearOpen && (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto text-sm">
+                      {yearOptions.map((y) => {
+                        const isActive = y === year;
+                        return (
+                          <button
+                            key={y}
+                            type="button"
+                            onClick={() => {
+                              handleChange(y, month);
+                              setIsEndYearOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 hover:bg-blue-50 ${
+                              isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                            }`}
+                          >
+                            {y + 543}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}
         </div>
+
       </div>
 
       {/* Quick presets */}

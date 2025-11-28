@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       startDate ? new Date(startDate) : undefined,
       endDate ? new Date(endDate) : undefined,
       department || undefined,
-      bandLevel || undefined,
+      undefined, // การกรองตามระดับตำแหน่งจะทำในชั้น API หลังจากแมปชื่อไทยแล้ว
       isNewEmployee
     );
 
@@ -45,7 +45,12 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(enrichedEmployees);
+    // ถ้ามีการเลือกกรองระดับตำแหน่งจาก frontend ให้กรองในชั้นนี้
+    const finalEmployees = bandLevel
+      ? enrichedEmployees.filter((emp) => emp.bandLevel === bandLevel)
+      : enrichedEmployees;
+
+    return NextResponse.json(finalEmployees);
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(

@@ -23,3 +23,10 @@ body {
   /* เริ่มจากมุมบนซ้ายที่ x=15% แล้วลากไปขวา: ทำให้เอียงน้อยลง */
   clip-path: polygon(7% 0, 100% 0, 100% 100%, 0 100%);
 }
+
+/* ให้ option ใน select มีพื้นหลังฟ้าอ่อนตอน hover/เลือก ให้ใกล้เคียง dropdown ฝ่าย */
+select option:checked,
+select option:hover {
+  background-color: #e0edff; /* ฟ้าอ่อน */
+  color: #0f172a; /* ตัวอักษรเข้มอ่านง่าย */
+}

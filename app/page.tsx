@@ -15,9 +15,9 @@ export default function Home() {
     endDate: new Date()
   });
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [filters, setFilters] = useState<{ department: string; position: string }>({
-    department: '',
-    position: '' // This will be used for bandLevel
+  const [filters, setFilters] = useState<{ departments: string[]; positions: string[] }>({
+    departments: [],
+    positions: [] // This will be used for bandLevel (multi-select)
   });
 
   // Use React Query hooks for data fetching with caching
@@ -57,17 +57,21 @@ export default function Home() {
       );
     }
 
-    if (filters.department) {
-      console.log('🏢 Filtering by department:', filters.department);
+    if (filters.departments && filters.departments.length > 0) {
+      console.log('🏢 Filtering by departments:', filters.departments);
       console.log('📋 Available departments:', [...new Set(employees.map(emp => emp.department))]);
-      filtered = filtered.filter(emp => emp.department === filters.department);
+      filtered = filtered.filter(emp =>
+        emp.department ? filters.departments.includes(emp.department) : false
+      );
       console.log('✅ After department filter:', filtered.length);
     }
 
-    if (filters.position) {
-      console.log('💼 Filtering by position:', filters.position);
-      console.log('📋 Available positions:', [...new Set(employees.map(emp => emp.position))]);
-      filtered = filtered.filter(emp => emp.position === filters.position);
+    if (filters.positions && filters.positions.length > 0) {
+      console.log('💼 Filtering by positions (bandLevel):', filters.positions);
+      console.log('📋 Available bandLevels:', [...new Set(employees.map(emp => emp.bandLevel))]);
+      filtered = filtered.filter(emp =>
+        emp.bandLevel ? filters.positions.includes(emp.bandLevel) : false
+      );
       console.log('✅ After position filter:', filtered.length);
     }
 
@@ -83,8 +87,8 @@ export default function Home() {
     setSearchTerm(term);
   }, []);
 
-  const handleFiltersChange = useCallback((department: string, position: string) => {
-    setFilters({ department, position });
+  const handleFiltersChange = useCallback((departments: string[], positions: string[]) => {
+    setFilters({ departments, positions });
   }, []);
 
   return (
@@ -181,12 +185,15 @@ export default function Home() {
                 ผลลัพธ์พนักงานทั้งหมด {filteredEmployees.length} คน
               </span>
             </div>
-            {(searchTerm || filters.department || filters.position) && (
+            {(searchTerm ||
+              (filters.departments && filters.departments.length > 0) ||
+              (filters.positions && filters.positions.length > 0)) && (
               <button
                 onClick={() => {
                   setSearchTerm('');
-                  setFilters({ department: '', position: '' });
+                  setFilters({ departments: [], positions: [] });
                 }}
+
                 className="text-xs md:text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
                 ล้างตัวกรองทั้งหมด
@@ -216,8 +223,9 @@ export default function Home() {
               <button
                 onClick={() => {
                   setSearchTerm('');
-                  setFilters({ department: '', position: '' });
+                  setFilters({ departments: [], positions: [] });
                 }}
+
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
               >
                 ล้างตัวกรองทั้งหมด

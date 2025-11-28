@@ -17,13 +17,13 @@ interface SearchAndFiltersProps {
   departments: Department[];
   careerBands: CareerBand[];
   onSearchChangeAction: (term: string) => void;
-  onFiltersChangeAction: (department: string, position: string) => void;
+  onFiltersChangeAction: (departments: string[], positions: string[]) => void;
 }
 
 interface FiltersProps {
   departments: Department[];
   careerBands: CareerBand[];
-  onFiltersChangeAction: (department: string, position: string) => void;
+  onFiltersChangeAction: (departments: string[], positions: string[]) => void;
 }
 
 export default function SearchAndFilters({
@@ -33,8 +33,10 @@ export default function SearchAndFilters({
   onFiltersChangeAction
 }: SearchAndFiltersProps) {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-  const [selectedPosition, setSelectedPosition] = useState<string>('');
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
+  const [isDepartmentOpen, setIsDepartmentOpen] = useState<boolean>(false);
+  const [isPositionOpen, setIsPositionOpen] = useState<boolean>(false);
 
   useEffect(() => {
     console.log('📝 Search term changed:', searchTerm);
@@ -42,20 +44,24 @@ export default function SearchAndFilters({
   }, [searchTerm, onSearchChangeAction]);
 
   useEffect(() => {
-    console.log('🏢 Filters changed:', { selectedDepartment, selectedPosition });
-    onFiltersChangeAction(selectedDepartment, selectedPosition);
-  }, [selectedDepartment, selectedPosition, onFiltersChangeAction]);
+    console.log('🏢 Filters changed:', {
+      selectedDepartments,
+      selectedPositions
+    });
+    onFiltersChangeAction(selectedDepartments, selectedPositions);
+  }, [selectedDepartments, selectedPositions, onFiltersChangeAction]);
 
   const clearSearch = () => {
     setSearchTerm('');
   };
 
-  const hasActiveFilters = searchTerm || selectedDepartment || selectedPosition;
+  const hasActiveFilters =
+    Boolean(searchTerm) || selectedDepartments.length > 0 || selectedPositions.length > 0;
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setSelectedDepartment('');
-    setSelectedPosition('');
+    setSelectedDepartments([]);
+    setSelectedPositions([]);
   };
 
   return (
@@ -113,20 +119,70 @@ export default function SearchAndFilters({
             <Building2 className="w-4 h-4 inline mr-1 text-blue-600" />
             ฝ่าย/สถาบัน
           </label>
-          <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 transition-all hover:border-slate-400 shadow-sm"
-          >
-            <option value="">ทุกฝ่าย/สถาบัน</option>
-            {departments
-              .filter(department => department.name !== 'FTI Expo' && department.name !== 'ประจำผู้อำนวยการใหญ่ (โครงการพิเศษ CSR)')
-              .map((department) => (
-              <option key={department.id} value={department.name}>
-                {department.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsDepartmentOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm"
+            >
+              <span className="truncate">
+                {selectedDepartments.length === 0
+                  ? 'ทุกฝ่าย/สถาบัน'
+                  : selectedDepartments.join(', ')}
+              </span>
+              <span className="ml-2 text-slate-400 text-xs">
+                ▼
+              </span>
+            </button>
+
+            {isDepartmentOpen && (
+              <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDepartments([]);
+                    setIsDepartmentOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
+                    selectedDepartments.length === 0
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-slate-700'
+                  }`}
+                >
+                  ทุกฝ่าย/สถาบัน
+                </button>
+                {departments
+                  .filter((department) =>
+                    department.name !== 'FTI Expo' &&
+                    department.name !== 'ประจำผู้อำนวยการใหญ่ (โครงการพิเศษ CSR)'
+                  )
+                  .map((department) => {
+                    const isActive = selectedDepartments.includes(department.name);
+                    return (
+                      <button
+                        key={department.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDepartments((prev) => {
+                            const exists = prev.includes(department.name);
+                            if (exists) {
+                              return prev.filter((d) => d !== department.name);
+                            }
+                            return [...prev, department.name];
+                          });
+                          setIsDepartmentOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
+                          isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                        }`}
+                      >
+                        {department.name}
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Position Filter */}
@@ -135,18 +191,63 @@ export default function SearchAndFilters({
             <User className="w-4 h-4 inline mr-1 text-blue-600" />
             ระดับตำแหน่ง
           </label>
-          <select
-            value={selectedPosition}
-            onChange={(e) => setSelectedPosition(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 transition-all hover:border-slate-400 shadow-sm"
-          >
-            <option value="">ทุกระดับตำแหน่ง</option>
-            {careerBands.map((careerBand) => (
-              <option key={careerBand.id} value={careerBand.name}>
-                {careerBand.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsPositionOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded-xl bg-white text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-slate-400 shadow-sm"
+            >
+              <span className="truncate">
+                {selectedPositions.length === 0
+                  ? 'ทุกระดับตำแหน่ง'
+                  : selectedPositions.join(', ')}
+              </span>
+              <span className="ml-2 text-slate-400 text-xs">▼</span>
+            </button>
+
+            {isPositionOpen && (
+              <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPositions([]);
+                    setIsPositionOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
+                    selectedPositions.length === 0
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-slate-700'
+                  }`}
+                >
+                  ทุกระดับตำแหน่ง
+                </button>
+                {careerBands.map((careerBand) => {
+                  const isActive = selectedPositions.includes(careerBand.name);
+                  return (
+                    <button
+                      key={careerBand.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPositions((prev) => {
+                          const exists = prev.includes(careerBand.name);
+                          if (exists) {
+                            return prev.filter((p) => p !== careerBand.name);
+                          }
+                          return [...prev, careerBand.name];
+                        });
+                        setIsPositionOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
+                        isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                      }`}
+                    >
+                      {careerBand.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -162,24 +263,40 @@ export default function SearchAndFilters({
               </button>
             </span>
           )}
-          {selectedDepartment && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+          {selectedDepartments.map((dept) => (
+            <span
+              key={dept}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+            >
               <Building2 className="w-3 h-3" />
-              {selectedDepartment}
-              <button onClick={() => setSelectedDepartment('')} className="ml-1 hover:bg-blue-100 rounded-full p-0.5">
+              {dept}
+              <button
+                onClick={() =>
+                  setSelectedDepartments((prev) => prev.filter((d) => d !== dept))
+                }
+                className="ml-1 hover:bg-blue-100 rounded-full p-0.5"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
-          )}
-          {selectedPosition && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+          ))}
+          {selectedPositions.map((pos) => (
+            <span
+              key={pos}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+            >
               <User className="w-3 h-3" />
-              {selectedPosition}
-              <button onClick={() => setSelectedPosition('')} className="ml-1 hover:bg-blue-100 rounded-full p-0.5">
+              {pos}
+              <button
+                onClick={() =>
+                  setSelectedPositions((prev) => prev.filter((p) => p !== pos))
+                }
+                className="ml-1 hover:bg-blue-100 rounded-full p-0.5"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
-          )}
+          ))}
         </div>
       )}
     </div>
