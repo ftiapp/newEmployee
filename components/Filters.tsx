@@ -188,35 +188,30 @@ export default function SearchAndFilters({
                 >
                   ทุกฝ่าย/สถาบัน
                 </button>
-                {departments
-                  .filter((department) =>
-                    department.name !== 'FTI Expo' &&
-                    department.name !== 'ประจำผู้อำนวยการใหญ่ (โครงการพิเศษ CSR)'
-                  )
-                  .map((department) => {
-                    const isActive = selectedDepartments.includes(department.name);
-                    return (
-                      <button
-                        key={department.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedDepartments((prev) => {
-                            const exists = prev.includes(department.name);
-                            if (exists) {
-                              return prev.filter((d) => d !== department.name);
-                            }
-                            return [...prev, department.name];
-                          });
-                          setIsDepartmentOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
-                          isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
-                        }`}
-                      >
-                        {department.name}
-                      </button>
-                    );
-                  })}
+                {departments.map((department) => {
+                  const isActive = selectedDepartments.includes(department.name);
+                  return (
+                    <button
+                      key={department.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDepartments((prev) => {
+                          const exists = prev.includes(department.name);
+                          if (exists) {
+                            return prev.filter((d) => d !== department.name);
+                          }
+                          return [...prev, department.name];
+                        });
+                        setIsDepartmentOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
+                        isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                      }`}
+                    >
+                      {department.name}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -240,7 +235,9 @@ export default function SearchAndFilters({
               <span className="truncate">
                 {selectedPositions.length === 0
                   ? 'ทุกระดับตำแหน่ง'
-                  : selectedPositions.join(', ')}
+                  : selectedPositions
+                      .map((pos) => pos.replace(/\s*-\s*/g, '').trim())
+                      .join(', ')}
               </span>
               <span className="ml-2 text-slate-400 text-xs">▼</span>
             </button>
@@ -261,30 +258,35 @@ export default function SearchAndFilters({
                 >
                   ทุกระดับตำแหน่ง
                 </button>
-                {careerBands.map((careerBand) => {
-                  const isActive = selectedPositions.includes(careerBand.name);
-                  return (
-                    <button
-                      key={careerBand.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedPositions((prev) => {
-                          const exists = prev.includes(careerBand.name);
-                          if (exists) {
-                            return prev.filter((p) => p !== careerBand.name);
-                          }
-                          return [...prev, careerBand.name];
-                        });
-                        setIsPositionOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
-                        isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
-                      }`}
-                    >
-                      {careerBand.name}
-                    </button>
-                  );
-                })}
+                {careerBands
+                  .filter((careerBand) =>
+                    Boolean(careerBand.name && careerBand.name.replace(/\s*-\s*/g, '').trim())
+                  )
+                  .map((careerBand) => {
+                    const isActive = selectedPositions.includes(careerBand.name);
+                    const displayName = careerBand.name.replace(/\s*-\s*/g, '').trim();
+                    return (
+                      <button
+                        key={careerBand.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPositions((prev) => {
+                            const exists = prev.includes(careerBand.name);
+                            if (exists) {
+                              return prev.filter((p) => p !== careerBand.name);
+                            }
+                            return [...prev, careerBand.name];
+                          });
+                          setIsPositionOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 ${
+                          isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                        }`}
+                      >
+                        {displayName}
+                      </button>
+                    );
+                  })}
               </div>
             )}
           </div>
@@ -320,23 +322,26 @@ export default function SearchAndFilters({
               </button>
             </span>
           ))}
-          {selectedPositions.map((pos) => (
-            <span
-              key={pos}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-            >
-              <User className="w-3 h-3" />
-              {pos}
-              <button
-                onClick={() =>
-                  setSelectedPositions((prev) => prev.filter((p) => p !== pos))
-                }
-                className="ml-1 hover:bg-blue-100 rounded-full p-0.5"
+          {selectedPositions.map((pos) => {
+            const displayName = pos.replace(/\s*-\s*/g, '').trim();
+            return (
+              <span
+                key={pos}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
               >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
+                <User className="w-3 h-3" />
+                {displayName}
+                <button
+                  onClick={() =>
+                    setSelectedPositions((prev) => prev.filter((p) => p !== pos))
+                  }
+                  className="ml-1 hover:bg-blue-100 rounded-full p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })}
         </div>
       )}
     </div>

@@ -259,7 +259,6 @@ export async function getDepartments(): Promise<Department[]> {
       WHERE e.status = 'active'
         AND d."fullName" IS NOT NULL
         AND d."fullName" <> ''
-        AND d."fullName" NOT IN ('ผู้อำนวยการใหญ่', 'รองผู้อำนวยการใหญ่')
       ORDER BY d."fullName"
     `);
 
