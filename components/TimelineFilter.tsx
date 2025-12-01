@@ -463,6 +463,7 @@ export default function TimelineSlider({ onDateRangeChangeAction }: TimelineSlid
             const endValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             setStartMonth(startValue);
             setEndMonth(endValue);
+            setActivePreset(null);
           }}
           className="text-blue-600 hover:text-blue-700 font-medium"
         >
